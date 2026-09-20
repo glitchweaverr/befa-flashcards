@@ -79,6 +79,10 @@ kbd{background:#fff;border:1px solid #e9dce1;border-bottom-width:2px;border-radi
 .narrator h2{margin:0;font-size:.95rem;letter-spacing:-.02em}
 .narrator p{margin:2px 0 0;color:var(--muted);font-size:.77rem;line-height:1.35}
 .narrator-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end}
+.voice-fields{display:grid;grid-template-columns:minmax(135px,.8fr) minmax(160px,1.2fr);gap:8px;min-width:0}
+.voice-search{display:grid;gap:5px;min-width:0;color:#795f7c;font-size:.72rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+.voice-search input{width:100%;min-width:0;height:43px;padding:0 10px;border:1px solid #e7ddef;border-radius:11px;background:#fff;color:var(--ink);font-size:.85rem}
+.voice-search input:focus,.voice-picker select:focus{outline:3px solid #e9ddfa;border-color:#a882d5}
 .voice-picker{display:grid;gap:5px;min-width:0;color:#795f7c;font-size:.72rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
 .voice-picker select{width:100%;min-width:0;height:43px;padding:0 10px;border:1px solid #e7ddef;border-radius:11px;background:#fff;color:var(--ink);font-size:.85rem}
 .narrate-button{height:43px;border:0;border-radius:11px;padding:0 14px;background:#e8defc;color:#63468f;font-weight:850;cursor:pointer}
@@ -148,8 +152,8 @@ button,.flashcard{-webkit-tap-highlight-color:transparent;touch-action:manipulat
   .reveal-button,.rating-button,.nav-button{min-height:48px}
   .search-box input{font-size:16px}
   .sheet-dialog{width:min(710px,calc(100% - 20px));margin:0 auto;border-radius:20px;padding:18px max(18px,env(safe-area-inset-right)) 18px max(18px,env(safe-area-inset-left))}
-  .narrator-controls{grid-template-columns:1fr}
-  .voice-picker select,.narrate-button{height:48px;font-size:.95rem}
+  .narrator-controls,.voice-fields{grid-template-columns:1fr}
+  .voice-search input,.voice-picker select,.narrate-button{height:48px;font-size:.95rem}
 }
 @media(max-width:370px){
   .status-row{gap:8px}
@@ -161,7 +165,8 @@ button,.flashcard{-webkit-tap-highlight-color:transparent;touch-action:manipulat
 /* On phones, let a long answer grow into the document so the buttons follow it. */
 @media(max-width:650px){
   .flashcard{transform:none!important;transition:height .25s ease}
-  .card-face{transform:none;backface-visibility:visible;transition:opacity .18s ease}
+  .flashcard,.card-face{touch-action:auto;overscroll-behavior:auto}
+  .card-face{transform:none;backface-visibility:visible;transition:opacity .18s ease;overflow:visible}
   .flashcard:not(.is-flipped) .card-back{opacity:0;visibility:hidden;pointer-events:none}
   .flashcard.is-flipped .card-front{opacity:0;visibility:hidden;pointer-events:none}
   .flashcard.is-flipped{height:auto;min-height:0}

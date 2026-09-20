@@ -10,7 +10,7 @@
   const storageKey = 'befa-bloom-study-progress-v1';
   const allCards = units.flatMap(unit => unit.cards.map((card, index) => ({ ...card, id: `u${unit.id}-q${index + 1}`, unitId: unit.id, questionNumber: index + 1, unitName: unitNames[unit.id - 1] })));
   const $ = id => document.getElementById(id);
-  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList'), narrate: $('narrateButton'), voiceSelect: $('voiceSelect'), narratorStatus: $('narratorStatus') };
+  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), copyLink: $('copyLinkButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList'), narrate: $('narrateButton'), voiceSearch: $('voiceSearch'), voiceSelect: $('voiceSelect'), narratorStatus: $('narratorStatus') };
   let progress = loadProgress();
   let session = [];
   let sessionName = '';
@@ -25,6 +25,24 @@
   function statusFor(card) { return progress[card.id] || ''; }
   function makeElement(tag, options = {}) { const node = document.createElement(tag); Object.assign(node, options); return node; }
   function cardFor(unitId, questionNumber) { return allCards.find(card => card.unitId === unitId && card.questionNumber === questionNumber); }
+  function replaceRoute(route) {
+    const nextHash = `#${route}`;
+    if (window.location.hash !== nextHash) history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+  }
+  function studyRoute() {
+    const card = currentCard();
+    if (card) replaceRoute(`unit-${card.unitId}/question-${card.questionNumber}`);
+  }
+  function routeFromLocation() {
+    const route = decodeURIComponent(window.location.hash.replace(/^#/, ''));
+    const cardMatch = route.match(/^unit-([1-4])\/question-([1-9]|1[0-5])$/);
+    const listMatch = route.match(/^unit-([1-4])\/questions$/);
+    const searchMatch = route.match(/^search(?:\/(.*))?$/);
+    if (cardMatch) { openUnit(Number(cardMatch[1]), Number(cardMatch[2])); return; }
+    if (listMatch) { openUnit(Number(listMatch[1])); openQuestionList(false); replaceRoute(route); return; }
+    if (searchMatch) { showHome(false); openSearch(searchMatch[1] || '', false); return; }
+    showHome(false);
+  }
 
   function renderHome() {
     const known = allCards.filter(card => statusFor(card) === 'known').length;
@@ -58,9 +76,10 @@
     el.homeView.hidden = true; el.studyView.hidden = false; el.homeButton.hidden = false;
     renderCard(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function showHome() {
+  function showHome(updateRoute = true) {
     el.studyView.hidden = true; el.homeView.hidden = false; el.homeButton.hidden = true;
     renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (updateRoute) replaceRoute('home');
   }
   function currentCard() { return session[currentIndex]; }
   function renderCard() {
@@ -77,6 +96,7 @@
     el.reveal.innerHTML = 'Reveal answer <span aria-hidden="true">↻</span>';
     el.flashcard.setAttribute('aria-label', `Question ${card.questionNumber}. ${card.q} Press Enter or Space to reveal the answer.`);
     renderRating();
+    studyRoute();
   }
   function renderRating() {
     const status = statusFor(currentCard());
@@ -102,7 +122,7 @@
     for (let i = session.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [session[i], session[j]] = [session[j], session[i]]; }
     currentIndex = session.findIndex(card => card.id === current.id); renderCard();
   }
-  function openQuestionList() {
+  function openQuestionList(updateRoute = true) {
     el.questionList.replaceChildren();
     session.forEach((card, index) => {
       const button = makeElement('button', { className: `question-item${index === currentIndex ? ' is-current' : ''}`, type: 'button' });
@@ -112,22 +132,28 @@
       el.questionList.append(button);
     });
     el.questionDialog.showModal();
+    if (updateRoute && currentCard()) replaceRoute(`unit-${currentCard().unitId}/questions`);
   }
   function closeDialog(dialog) { if (dialog.open) dialog.close(); }
   function setNarratorStatus(message) { el.narratorStatus.textContent = message; }
   function updateNarrateButton() {
     const isPlaying = Boolean(activeUtterance);
-    el.narrate.disabled = !speechSupported || !availableVoices.length;
+    el.narrate.disabled = !speechSupported || !el.voiceSelect.value;
     el.narrate.innerHTML = isPlaying ? '<span aria-hidden="true">■</span> Stop narration' : '<span aria-hidden="true">▶</span> Listen to answer';
   }
-  function loadVoices() {
-    if (!speechSupported) return;
-    availableVoices = window.speechSynthesis.getVoices().sort((a, b) => a.name.localeCompare(b.name));
-    if (!availableVoices.length) { setNarratorStatus('No system voices are available yet. Try again in a moment.'); updateNarrateButton(); return; }
-    const savedVoice = localStorage.getItem(voiceStorageKey);
-    const selectedVoice = availableVoices.find(voice => voice.voiceURI === savedVoice) || availableVoices.find(voice => voice.default) || availableVoices[0];
+  function renderVoiceOptions() {
+    const filter = el.voiceSearch.value.trim().toLocaleLowerCase();
+    const matchingVoices = availableVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(filter));
+    const preferredVoice = el.voiceSelect.value || localStorage.getItem(voiceStorageKey);
     el.voiceSelect.replaceChildren();
-    availableVoices.forEach(voice => {
+    if (!matchingVoices.length) {
+      el.voiceSelect.append(makeElement('option', { value: '', textContent: 'No matching installed voices' }));
+      el.voiceSelect.disabled = true;
+      updateNarrateButton();
+      return;
+    }
+    const selectedVoice = matchingVoices.find(voice => voice.voiceURI === preferredVoice) || matchingVoices.find(voice => voice.default) || matchingVoices[0];
+    matchingVoices.forEach(voice => {
       const option = document.createElement('option');
       option.value = voice.voiceURI;
       option.textContent = `${voice.name} (${voice.lang})`;
@@ -135,8 +161,15 @@
       el.voiceSelect.append(option);
     });
     el.voiceSelect.disabled = false;
-    setNarratorStatus('Choose a voice, then listen to the answer.');
     updateNarrateButton();
+  }
+  function loadVoices() {
+    if (!speechSupported) return;
+    availableVoices = window.speechSynthesis.getVoices().sort((a, b) => a.name.localeCompare(b.name));
+    if (!availableVoices.length) { setNarratorStatus('No system voices are available yet. Try again in a moment.'); el.voiceSearch.disabled = true; updateNarrateButton(); return; }
+    el.voiceSearch.disabled = false;
+    renderVoiceOptions();
+    setNarratorStatus('Choose a voice, then listen to the answer.');
   }
   function stopNarration(announce = true) {
     if (!speechSupported || !activeUtterance) return;
@@ -168,10 +201,30 @@
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     setTimeout(loadVoices, 300);
     el.voiceSelect.addEventListener('change', () => { localStorage.setItem(voiceStorageKey, el.voiceSelect.value); });
+    el.voiceSearch.addEventListener('input', renderVoiceOptions);
     el.narrate.addEventListener('click', narrateAnswer);
   }
-  function doSearch() {
-    const query = el.searchInput.value.trim().toLocaleLowerCase(); el.searchResults.replaceChildren();
+  async function copyCurrentLink() {
+    const originalLabel = el.copyLink.innerHTML;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      const fallback = document.createElement('textarea');
+      fallback.value = window.location.href;
+      fallback.style.position = 'fixed';
+      fallback.style.opacity = '0';
+      document.body.append(fallback);
+      fallback.select();
+      document.execCommand('copy');
+      fallback.remove();
+    }
+    el.copyLink.innerHTML = '✓ <span>Copied!</span>';
+    setTimeout(() => { el.copyLink.innerHTML = originalLabel; }, 1600);
+  }
+  function doSearch(updateRoute = true) {
+    const rawQuery = el.searchInput.value.trim();
+    const query = rawQuery.toLocaleLowerCase(); el.searchResults.replaceChildren();
+    if (updateRoute && el.searchDialog.open) replaceRoute(rawQuery ? `search/${encodeURIComponent(rawQuery)}` : 'search');
     if (!query) { el.searchSummary.textContent = 'Start typing to search all 60 cards.'; return; }
     const matches = allCards.filter(card => `${card.q} ${card.a}`.toLocaleLowerCase().includes(query));
     el.searchSummary.textContent = `${matches.length} card${matches.length === 1 ? '' : 's'} found.`;
@@ -183,17 +236,25 @@
       button.addEventListener('click', () => openSearchCard(card)); el.searchResults.append(button);
     });
   }
-  function openSearch() { el.searchDialog.showModal(); el.searchInput.value = ''; doSearch(); setTimeout(() => el.searchInput.focus(), 0); }
+  function openSearch(query = '', updateRoute = true) {
+    if (!el.searchDialog.open) el.searchDialog.showModal();
+    el.searchInput.value = query;
+    doSearch(updateRoute);
+    setTimeout(() => el.searchInput.focus(), 0);
+  }
   function activeInput() { const tag = document.activeElement?.tagName; return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'; }
 
   el.homeBrand.addEventListener('click', showHome); el.homeButton.addEventListener('click', showHome); el.back.addEventListener('click', showHome);
-  el.searchButton.addEventListener('click', openSearch); el.searchInput.addEventListener('input', doSearch);
+  el.searchButton.addEventListener('click', () => openSearch()); el.searchInput.addEventListener('input', () => doSearch());
   el.questions.addEventListener('click', openQuestionList); el.shuffle.addEventListener('click', shuffleSession);
+  el.copyLink.addEventListener('click', copyCurrentLink);
   el.flashcard.addEventListener('click', () => { if (!ignoreNextCardClick) flipCard(); }); el.reveal.addEventListener('click', flipCard);
   el.flashcard.addEventListener('keydown', event => { if (event.key === 'Enter' || event.code === 'Space') { event.preventDefault(); flipCard(); } });
   el.previous.addEventListener('click', () => move(-1)); el.next.addEventListener('click', () => move(1));
   el.know.addEventListener('click', () => setStatus('known')); el.review.addEventListener('click', () => setStatus('review'));
   document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog($(button.dataset.closeDialog))));
+  el.searchDialog.addEventListener('close', () => { if (window.location.hash.startsWith('#search')) { if (el.studyView.hidden) replaceRoute('home'); else studyRoute(); } });
+  el.questionDialog.addEventListener('close', () => { if (!el.studyView.hidden) studyRoute(); });
   let touchStartX = 0;
   let touchStartY = 0;
   let ignoreNextCardClick = false;
@@ -219,4 +280,6 @@
   });
   renderHome();
   initialiseNarrator();
+  routeFromLocation();
+  window.addEventListener('hashchange', routeFromLocation);
 })();

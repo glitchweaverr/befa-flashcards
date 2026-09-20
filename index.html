@@ -54,6 +54,7 @@
         <div class="study-menu">
           <button class="soft-button" id="questionListButton" type="button" aria-haspopup="dialog">☰ <span>Questions</span></button>
           <button class="soft-button" id="shuffleButton" type="button">↯ <span>Shuffle</span></button>
+          <button class="soft-button" id="copyLinkButton" type="button" aria-label="Copy a link to this question" title="Copy a link to this question">⧉ <span>Copy link</span></button>
         </div>
       </div>
       <div class="study-heading">
@@ -87,7 +88,10 @@
       <section class="narrator" aria-labelledby="narratorTitle">
         <div class="narrator-copy"><span class="narrator-icon" aria-hidden="true">♫</span><div><h2 id="narratorTitle">Study narrator</h2><p id="narratorStatus" aria-live="polite">Choose a voice, then listen to the answer.</p></div></div>
         <div class="narrator-controls">
-          <label class="voice-picker" for="voiceSelect"><span>Voice</span><select id="voiceSelect" aria-label="Narrator voice" disabled><option>Loading voices…</option></select></label>
+          <div class="voice-fields">
+            <label class="voice-search" for="voiceSearch"><span>Find a voice</span><input id="voiceSearch" type="search" autocomplete="off" placeholder="Search installed voices" disabled></label>
+            <label class="voice-picker" for="voiceSelect"><span>Choose voice</span><select id="voiceSelect" aria-label="Narrator voice" disabled><option>Loading voices…</option></select></label>
+          </div>
           <button id="narrateButton" class="narrate-button" type="button" disabled><span aria-hidden="true">▶</span> Listen to answer</button>
         </div>
       </section>
