@@ -84,6 +84,13 @@
         <button id="reviewButton" class="rating-button review-button" type="button"><span aria-hidden="true">↺</span> Review again</button>
         <button id="knowButton" class="rating-button know-button" type="button"><span aria-hidden="true">♥</span> I know this</button>
       </div>
+      <section class="narrator" aria-labelledby="narratorTitle">
+        <div class="narrator-copy"><span class="narrator-icon" aria-hidden="true">♫</span><div><h2 id="narratorTitle">Study narrator</h2><p id="narratorStatus" aria-live="polite">Choose a voice, then listen to the answer.</p></div></div>
+        <div class="narrator-controls">
+          <label class="voice-picker" for="voiceSelect"><span>Voice</span><select id="voiceSelect" aria-label="Narrator voice" disabled><option>Loading voices…</option></select></label>
+          <button id="narrateButton" class="narrate-button" type="button" disabled><span aria-hidden="true">▶</span> Listen to answer</button>
+        </div>
+      </section>
       <nav class="card-navigation" aria-label="Flashcard navigation">
         <button id="previousButton" class="nav-button" type="button"><span aria-hidden="true">←</span> Previous</button>
         <button id="nextButton" class="nav-button nav-next" type="button">Next <span aria-hidden="true">→</span></button>

@@ -73,6 +73,16 @@ kbd{background:#fff;border:1px solid #e9dce1;border-bottom-width:2px;border-radi
 .review-button{background:#fff5df;color:#a26d1d;border-color:#f6e1a7}
 .know-button{background:#e6f8ef;color:#36735d;border-color:#c9ead9}
 .rating-button.is-active{outline:3px solid #edb0c480}
+.narrator{max-width:550px;margin:0 auto 18px;padding:15px;border:1px solid #e5dff5;border-radius:17px;background:linear-gradient(135deg,#faf7ff,#fffafe)}
+.narrator-copy{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.narrator-icon{display:grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border-radius:11px;background:#e8defc;color:#7959ad;font-size:1.1rem}
+.narrator h2{margin:0;font-size:.95rem;letter-spacing:-.02em}
+.narrator p{margin:2px 0 0;color:var(--muted);font-size:.77rem;line-height:1.35}
+.narrator-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end}
+.voice-picker{display:grid;gap:5px;min-width:0;color:#795f7c;font-size:.72rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+.voice-picker select{width:100%;min-width:0;height:43px;padding:0 10px;border:1px solid #e7ddef;border-radius:11px;background:#fff;color:var(--ink);font-size:.85rem}
+.narrate-button{height:43px;border:0;border-radius:11px;padding:0 14px;background:#e8defc;color:#63468f;font-weight:850;cursor:pointer}
+.narrate-button:disabled,.voice-picker select:disabled{opacity:.58;cursor:not-allowed}
 .card-navigation{display:flex;justify-content:space-between;gap:12px}
 .nav-button{border:0;border-radius:13px;background:white;box-shadow:0 3px 12px #a56f8020;padding:12px 16px;font-weight:800;cursor:pointer;min-width:132px}
 .nav-next{background:#f4d3df;color:#71384c}
@@ -138,10 +148,22 @@ button,.flashcard{-webkit-tap-highlight-color:transparent;touch-action:manipulat
   .reveal-button,.rating-button,.nav-button{min-height:48px}
   .search-box input{font-size:16px}
   .sheet-dialog{width:min(710px,calc(100% - 20px));margin:0 auto;border-radius:20px;padding:18px max(18px,env(safe-area-inset-right)) 18px max(18px,env(safe-area-inset-left))}
+  .narrator-controls{grid-template-columns:1fr}
+  .voice-picker select,.narrate-button{height:48px;font-size:.95rem}
 }
 @media(max-width:370px){
   .status-row{gap:8px}
   .rating-button{padding:12px 7px;font-size:.86rem}
   .study-menu{gap:6px}
-.soft-button{padding:8px 9px}
+  .soft-button{padding:8px 9px}
+}
+
+/* On phones, let a long answer grow into the document so the buttons follow it. */
+@media(max-width:650px){
+  .flashcard{transform:none!important;transition:height .25s ease}
+  .card-face{transform:none;backface-visibility:visible;transition:opacity .18s ease}
+  .flashcard:not(.is-flipped) .card-back{opacity:0;visibility:hidden;pointer-events:none}
+  .flashcard.is-flipped .card-front{opacity:0;visibility:hidden;pointer-events:none}
+  .flashcard.is-flipped{height:auto;min-height:0}
+  .flashcard.is-flipped .card-back{position:relative;inset:auto;min-height:420px;overflow:visible}
 }

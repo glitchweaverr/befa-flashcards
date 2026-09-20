@@ -10,11 +10,15 @@
   const storageKey = 'befa-bloom-study-progress-v1';
   const allCards = units.flatMap(unit => unit.cards.map((card, index) => ({ ...card, id: `u${unit.id}-q${index + 1}`, unitId: unit.id, questionNumber: index + 1, unitName: unitNames[unit.id - 1] })));
   const $ = id => document.getElementById(id);
-  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList') };
+  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList'), narrate: $('narrateButton'), voiceSelect: $('voiceSelect'), narratorStatus: $('narratorStatus') };
   let progress = loadProgress();
   let session = [];
   let sessionName = '';
   let currentIndex = 0;
+  const speechSupported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const voiceStorageKey = 'befa-bloom-narrator-voice-v1';
+  let availableVoices = [];
+  let activeUtterance = null;
 
   function loadProgress() { try { return JSON.parse(localStorage.getItem(storageKey)) || {}; } catch { return {}; } }
   function saveProgress() { localStorage.setItem(storageKey, JSON.stringify(progress)); renderHome(); }
@@ -61,6 +65,7 @@
   function currentCard() { return session[currentIndex]; }
   function renderCard() {
     const card = currentCard(); if (!card) return showHome();
+    stopNarration(false);
     el.flashcard.classList.remove('is-flipped');
     el.question.textContent = card.q; el.answer.textContent = card.a;
     el.cardNumber.textContent = String(card.questionNumber).padStart(2, '0');
@@ -109,6 +114,62 @@
     el.questionDialog.showModal();
   }
   function closeDialog(dialog) { if (dialog.open) dialog.close(); }
+  function setNarratorStatus(message) { el.narratorStatus.textContent = message; }
+  function updateNarrateButton() {
+    const isPlaying = Boolean(activeUtterance);
+    el.narrate.disabled = !speechSupported || !availableVoices.length;
+    el.narrate.innerHTML = isPlaying ? '<span aria-hidden="true">■</span> Stop narration' : '<span aria-hidden="true">▶</span> Listen to answer';
+  }
+  function loadVoices() {
+    if (!speechSupported) return;
+    availableVoices = window.speechSynthesis.getVoices().sort((a, b) => a.name.localeCompare(b.name));
+    if (!availableVoices.length) { setNarratorStatus('No system voices are available yet. Try again in a moment.'); updateNarrateButton(); return; }
+    const savedVoice = localStorage.getItem(voiceStorageKey);
+    const selectedVoice = availableVoices.find(voice => voice.voiceURI === savedVoice) || availableVoices.find(voice => voice.default) || availableVoices[0];
+    el.voiceSelect.replaceChildren();
+    availableVoices.forEach(voice => {
+      const option = document.createElement('option');
+      option.value = voice.voiceURI;
+      option.textContent = `${voice.name} (${voice.lang})`;
+      option.selected = voice.voiceURI === selectedVoice.voiceURI;
+      el.voiceSelect.append(option);
+    });
+    el.voiceSelect.disabled = false;
+    setNarratorStatus('Choose a voice, then listen to the answer.');
+    updateNarrateButton();
+  }
+  function stopNarration(announce = true) {
+    if (!speechSupported || !activeUtterance) return;
+    window.speechSynthesis.cancel();
+    activeUtterance = null;
+    updateNarrateButton();
+    if (announce) setNarratorStatus('Narration stopped.');
+  }
+  function narrateAnswer() {
+    if (!speechSupported) return;
+    if (activeUtterance) { stopNarration(); return; }
+    const selectedVoice = availableVoices.find(voice => voice.voiceURI === el.voiceSelect.value) || availableVoices[0];
+    if (!selectedVoice) return;
+    const utterance = new SpeechSynthesisUtterance(currentCard().a);
+    utterance.voice = selectedVoice;
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    utterance.onend = () => { if (activeUtterance === utterance) { activeUtterance = null; updateNarrateButton(); setNarratorStatus('Finished reading the answer.'); } };
+    utterance.onerror = event => { if (activeUtterance === utterance) { activeUtterance = null; updateNarrateButton(); if (event.error !== 'canceled' && event.error !== 'interrupted') setNarratorStatus('Narration could not start. Choose another system voice and try again.'); } };
+    window.speechSynthesis.cancel();
+    activeUtterance = utterance;
+    updateNarrateButton();
+    setNarratorStatus(`Reading with ${selectedVoice.name}.`);
+    window.speechSynthesis.speak(utterance);
+  }
+  function initialiseNarrator() {
+    if (!speechSupported) { setNarratorStatus('Narration is not available in this browser.'); return; }
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    setTimeout(loadVoices, 300);
+    el.voiceSelect.addEventListener('change', () => { localStorage.setItem(voiceStorageKey, el.voiceSelect.value); });
+    el.narrate.addEventListener('click', narrateAnswer);
+  }
   function doSearch() {
     const query = el.searchInput.value.trim().toLocaleLowerCase(); el.searchResults.replaceChildren();
     if (!query) { el.searchSummary.textContent = 'Start typing to search all 60 cards.'; return; }
@@ -157,4 +218,5 @@
     if (event.key === 'ArrowLeft') move(-1); else if (event.key === 'ArrowRight') move(1); else if (event.code === 'Space') { event.preventDefault(); flipCard(); } else if (event.key.toLowerCase() === 'k') setStatus('known'); else if (event.key.toLowerCase() === 'r') setStatus('review');
   });
   renderHome();
+  initialiseNarrator();
 })();
