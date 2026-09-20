@@ -10,7 +10,7 @@
   const storageKey = 'befa-bloom-study-progress-v1';
   const allCards = units.flatMap(unit => unit.cards.map((card, index) => ({ ...card, id: `u${unit.id}-q${index + 1}`, unitId: unit.id, questionNumber: index + 1, unitName: unitNames[unit.id - 1] })));
   const $ = id => document.getElementById(id);
-  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), copyLink: $('copyLinkButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList'), narrate: $('narrateButton'), voiceSearch: $('voiceSearch'), voiceSelect: $('voiceSelect'), narratorStatus: $('narratorStatus') };
+  const el = { homeView: $('homeView'), studyView: $('studyView'), unitGrid: $('unitGrid'), homeButton: $('homeButton'), homeBrand: $('homeBrand'), overallText: $('overallProgressText'), overallBar: $('overallProgressBar'), studyBreadcrumb: $('studyBreadcrumb'), studyEyebrow: $('studyEyebrow'), studyTitle: $('studyTitle'), cardCount: $('cardCount'), progressBar: $('studyProgressBar'), flashcard: $('flashcard'), question: $('questionText'), answer: $('answerText'), cardNumber: $('cardNumber'), reveal: $('revealButton'), previous: $('previousButton'), next: $('nextButton'), know: $('knowButton'), review: $('reviewButton'), shuffle: $('shuffleButton'), copyLink: $('copyLinkButton'), back: $('backToHome'), questions: $('questionListButton'), searchButton: $('searchButton'), searchDialog: $('searchDialog'), questionDialog: $('questionDialog'), searchInput: $('searchInput'), searchResults: $('searchResults'), searchSummary: $('searchSummary'), questionList: $('questionList'), narrate: $('narrateButton'), voiceSearch: $('voiceSearch'), voiceList: $('voiceList'), narratorStatus: $('narratorStatus') };
   let progress = loadProgress();
   let session = [];
   let sessionName = '';
@@ -138,35 +138,37 @@
   function setNarratorStatus(message) { el.narratorStatus.textContent = message; }
   function updateNarrateButton() {
     const isPlaying = Boolean(activeUtterance);
-    el.narrate.disabled = !speechSupported || !el.voiceSelect.value;
+    el.narrate.disabled = !speechSupported || !getSelectedVoice();
     el.narrate.innerHTML = isPlaying ? '<span aria-hidden="true">■</span> Stop narration' : '<span aria-hidden="true">▶</span> Listen to answer';
   }
+  function getSelectedVoice() { return availableVoices.find(voice => voice.voiceURI === localStorage.getItem(voiceStorageKey)) || availableVoices.find(voice => voice.default) || availableVoices[0]; }
   function renderVoiceOptions() {
     const filter = el.voiceSearch.value.trim().toLocaleLowerCase();
     const matchingVoices = availableVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(filter));
-    const preferredVoice = el.voiceSelect.value || localStorage.getItem(voiceStorageKey);
-    el.voiceSelect.replaceChildren();
+    const chosenVoice = getSelectedVoice();
+    el.voiceList.replaceChildren();
+    el.voiceList.setAttribute('aria-busy', 'false');
     if (!matchingVoices.length) {
-      el.voiceSelect.append(makeElement('option', { value: '', textContent: 'No matching installed voices' }));
-      el.voiceSelect.disabled = true;
+      el.voiceList.append(makeElement('p', { className: 'voice-empty', textContent: 'No installed voice matches that search.' }));
       updateNarrateButton();
       return;
     }
-    const selectedVoice = matchingVoices.find(voice => voice.voiceURI === preferredVoice) || matchingVoices.find(voice => voice.default) || matchingVoices[0];
     matchingVoices.forEach(voice => {
-      const option = document.createElement('option');
-      option.value = voice.voiceURI;
-      option.textContent = `${voice.name} (${voice.lang})`;
-      option.selected = voice.voiceURI === selectedVoice.voiceURI;
-      el.voiceSelect.append(option);
+      const option = makeElement('button', { className: `voice-option${voice.voiceURI === chosenVoice.voiceURI ? ' is-selected' : ''}`, type: 'button' });
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', String(voice.voiceURI === chosenVoice.voiceURI));
+      const name = makeElement('span', { className: 'voice-name', textContent: voice.name });
+      const meta = makeElement('span', { className: 'voice-meta', textContent: `${voice.lang}${voice.default ? ' · Default' : ''}` });
+      option.append(name, meta);
+      option.addEventListener('click', () => { localStorage.setItem(voiceStorageKey, voice.voiceURI); renderVoiceOptions(); setNarratorStatus(`${voice.name} selected.`); });
+      el.voiceList.append(option);
     });
-    el.voiceSelect.disabled = false;
     updateNarrateButton();
   }
   function loadVoices() {
     if (!speechSupported) return;
     availableVoices = window.speechSynthesis.getVoices().sort((a, b) => a.name.localeCompare(b.name));
-    if (!availableVoices.length) { setNarratorStatus('No system voices are available yet. Try again in a moment.'); el.voiceSearch.disabled = true; updateNarrateButton(); return; }
+    if (!availableVoices.length) { setNarratorStatus('No system voices are available yet. Try again in a moment.'); el.voiceSearch.disabled = true; el.voiceList.replaceChildren(makeElement('p', { className: 'voice-empty', textContent: 'No system voices available yet.' })); updateNarrateButton(); return; }
     el.voiceSearch.disabled = false;
     renderVoiceOptions();
     setNarratorStatus('Choose a voice, then listen to the answer.');
@@ -181,7 +183,7 @@
   function narrateAnswer() {
     if (!speechSupported) return;
     if (activeUtterance) { stopNarration(); return; }
-    const selectedVoice = availableVoices.find(voice => voice.voiceURI === el.voiceSelect.value) || availableVoices[0];
+    const selectedVoice = getSelectedVoice();
     if (!selectedVoice) return;
     const utterance = new SpeechSynthesisUtterance(currentCard().a);
     utterance.voice = selectedVoice;
@@ -198,9 +200,8 @@
   function initialiseNarrator() {
     if (!speechSupported) { setNarratorStatus('Narration is not available in this browser.'); return; }
     loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    if ('onvoiceschanged' in window.speechSynthesis) window.speechSynthesis.onvoiceschanged = loadVoices;
     setTimeout(loadVoices, 300);
-    el.voiceSelect.addEventListener('change', () => { localStorage.setItem(voiceStorageKey, el.voiceSelect.value); });
     el.voiceSearch.addEventListener('input', renderVoiceOptions);
     el.narrate.addEventListener('click', narrateAnswer);
   }
@@ -279,7 +280,7 @@
     if (event.key === 'ArrowLeft') move(-1); else if (event.key === 'ArrowRight') move(1); else if (event.code === 'Space') { event.preventDefault(); flipCard(); } else if (event.key.toLowerCase() === 'k') setStatus('known'); else if (event.key.toLowerCase() === 'r') setStatus('review');
   });
   renderHome();
-  initialiseNarrator();
   routeFromLocation();
   window.addEventListener('hashchange', routeFromLocation);
+  initialiseNarrator();
 })();

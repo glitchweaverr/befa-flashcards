@@ -89,8 +89,8 @@
         <div class="narrator-copy"><span class="narrator-icon" aria-hidden="true">♫</span><div><h2 id="narratorTitle">Study narrator</h2><p id="narratorStatus" aria-live="polite">Choose a voice, then listen to the answer.</p></div></div>
         <div class="narrator-controls">
           <div class="voice-fields">
-            <label class="voice-search" for="voiceSearch"><span>Find a voice</span><input id="voiceSearch" type="search" autocomplete="off" placeholder="Search installed voices" disabled></label>
-            <label class="voice-picker" for="voiceSelect"><span>Choose voice</span><select id="voiceSelect" aria-label="Narrator voice" disabled><option>Loading voices…</option></select></label>
+            <label class="voice-search" for="voiceSearch"><span>Find a voice</span><span class="voice-search-input"><span aria-hidden="true">⌕</span><input id="voiceSearch" type="text" autocomplete="off" placeholder="Search installed voices" disabled></span></label>
+            <div class="voice-picker"><span id="voicePickerLabel">Choose voice</span><div id="voiceList" class="voice-list" role="listbox" aria-labelledby="voicePickerLabel" aria-busy="true"><p class="voice-empty">Loading installed voices…</p></div></div>
           </div>
           <button id="narrateButton" class="narrate-button" type="button" disabled><span aria-hidden="true">▶</span> Listen to answer</button>
         </div>
