@@ -128,14 +128,27 @@
   el.homeBrand.addEventListener('click', showHome); el.homeButton.addEventListener('click', showHome); el.back.addEventListener('click', showHome);
   el.searchButton.addEventListener('click', openSearch); el.searchInput.addEventListener('input', doSearch);
   el.questions.addEventListener('click', openQuestionList); el.shuffle.addEventListener('click', shuffleSession);
-  el.flashcard.addEventListener('click', flipCard); el.reveal.addEventListener('click', flipCard);
+  el.flashcard.addEventListener('click', () => { if (!ignoreNextCardClick) flipCard(); }); el.reveal.addEventListener('click', flipCard);
   el.flashcard.addEventListener('keydown', event => { if (event.key === 'Enter' || event.code === 'Space') { event.preventDefault(); flipCard(); } });
   el.previous.addEventListener('click', () => move(-1)); el.next.addEventListener('click', () => move(1));
   el.know.addEventListener('click', () => setStatus('known')); el.review.addEventListener('click', () => setStatus('review'));
   document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog($(button.dataset.closeDialog))));
   let touchStartX = 0;
-  el.flashcard.addEventListener('touchstart', event => { touchStartX = event.changedTouches[0].clientX; }, { passive: true });
-  el.flashcard.addEventListener('touchend', event => { const distance = event.changedTouches[0].clientX - touchStartX; if (Math.abs(distance) > 55) move(distance < 0 ? 1 : -1); }, { passive: true });
+  let touchStartY = 0;
+  let ignoreNextCardClick = false;
+  el.flashcard.addEventListener('touchstart', event => {
+    touchStartX = event.changedTouches[0].clientX;
+    touchStartY = event.changedTouches[0].clientY;
+  }, { passive: true });
+  el.flashcard.addEventListener('touchend', event => {
+    const distanceX = event.changedTouches[0].clientX - touchStartX;
+    const distanceY = event.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(distanceX) > 55 && Math.abs(distanceX) > Math.abs(distanceY)) {
+      ignoreNextCardClick = true;
+      move(distanceX < 0 ? 1 : -1);
+      setTimeout(() => { ignoreNextCardClick = false; }, 300);
+    }
+  }, { passive: true });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') { if (!el.searchDialog.open && !el.questionDialog.open && !el.studyView.hidden) showHome(); return; }
     if (activeInput() || el.searchDialog.open || el.questionDialog.open) return;
