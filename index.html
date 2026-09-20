@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fdf2f8">
+  <meta name="description" content="A gentle, focused study space for BEFA flashcards.">
+  <title>BEFA Bloom Study</title>
+  <link rel="stylesheet" href="study-styles.css">
+</head>
+<body>
+  <div class="page-glow glow-one" aria-hidden="true"></div>
+  <div class="page-glow glow-two" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="site-header">
+      <button class="brand" id="homeBrand" type="button" aria-label="Return to all study units">
+        <span class="brand-mark" aria-hidden="true">✿</span>
+        <span>BEFA Bloom</span>
+      </button>
+      <div class="header-actions">
+        <button class="icon-button" id="searchButton" type="button" aria-label="Search all flashcards" title="Search all cards">
+          <span aria-hidden="true">⌕</span><span class="button-label">Search</span>
+        </button>
+        <button class="icon-button" id="homeButton" type="button" aria-label="Return to all study units" title="All units" hidden>
+          <span aria-hidden="true">⌂</span><span class="button-label">All units</span>
+        </button>
+      </div>
+    </header>
+
+    <section id="homeView" class="view" aria-labelledby="homeTitle">
+      <div class="hero">
+        <p class="eyebrow">YOUR LITTLE STUDY CORNER</p>
+        <h1 id="homeTitle">Learn a little,<br><em>remember a lot.</em></h1>
+        <p class="hero-copy">Sixty BEFA flashcards, arranged into four focused study units.</p>
+        <div class="overall-progress" aria-label="Overall learning progress">
+          <div class="overall-progress-text"><span>Cards you know</span><strong id="overallProgressText">0 / 60</strong></div>
+          <div class="progress-track"><div id="overallProgressBar" class="progress-fill"></div></div>
+        </div>
+      </div>
+
+      <section class="unit-section" aria-labelledby="unitsTitle">
+        <div class="section-heading">
+          <div><p class="eyebrow">CHOOSE A CHAPTER</p><h2 id="unitsTitle">Your study units</h2></div>
+          <p class="tiny-note"><kbd>/</kbd> to search</p>
+        </div>
+        <div class="unit-grid" id="unitGrid"></div>
+      </section>
+    </section>
+
+    <section id="studyView" class="view" hidden aria-labelledby="studyTitle">
+      <div class="study-topline">
+        <button class="text-button" id="backToHome" type="button"><span aria-hidden="true">←</span> All units</button>
+        <p id="studyBreadcrumb" class="breadcrumb"></p>
+        <div class="study-menu">
+          <button class="soft-button" id="questionListButton" type="button" aria-haspopup="dialog">☰ <span>Questions</span></button>
+          <button class="soft-button" id="shuffleButton" type="button">↯ <span>Shuffle</span></button>
+        </div>
+      </div>
+      <div class="study-heading">
+        <div><p class="eyebrow" id="studyEyebrow">STUDY DECK</p><h1 id="studyTitle">Unit</h1></div>
+        <div class="study-count"><strong id="cardCount">1 / 15</strong><span>in this session</span></div>
+      </div>
+      <div class="study-progress" aria-hidden="true"><div id="studyProgressBar"></div></div>
+
+      <article class="flashcard-wrap" aria-live="polite">
+        <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Flashcard. Press Enter or Space to reveal the answer.">
+          <section class="card-face card-front" aria-label="Question">
+            <div class="card-top"><span class="card-type">QUESTION</span><span class="card-number" id="cardNumber">01</span></div>
+            <p class="prompt" id="questionText"></p>
+            <div class="card-bottom"><span>Tap or press Space to reveal</span><span class="flower" aria-hidden="true">✿</span></div>
+          </section>
+          <section class="card-face card-back" aria-label="Answer">
+            <div class="card-top"><span class="card-type">ANSWER</span><span class="card-number">✿</span></div>
+            <p class="answer" id="answerText"></p>
+            <div class="card-bottom"><span>Tap or press Space for question</span><span class="flower" aria-hidden="true">✿</span></div>
+          </section>
+        </div>
+      </article>
+
+      <div class="reveal-row">
+        <button id="revealButton" class="reveal-button" type="button">Reveal answer <span aria-hidden="true">↻</span></button>
+      </div>
+      <div class="status-row" aria-label="Recall rating">
+        <button id="reviewButton" class="rating-button review-button" type="button"><span aria-hidden="true">↺</span> Review again</button>
+        <button id="knowButton" class="rating-button know-button" type="button"><span aria-hidden="true">♥</span> I know this</button>
+      </div>
+      <nav class="card-navigation" aria-label="Flashcard navigation">
+        <button id="previousButton" class="nav-button" type="button"><span aria-hidden="true">←</span> Previous</button>
+        <button id="nextButton" class="nav-button nav-next" type="button">Next <span aria-hidden="true">→</span></button>
+      </nav>
+      <p class="keyboard-help">Keyboard: <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>Space</kbd> reveal · <kbd>R</kbd> review · <kbd>K</kbd> know</p>
+    </section>
+  </main>
+
+  <dialog id="searchDialog" class="sheet-dialog" aria-labelledby="searchTitle">
+    <div class="dialog-head"><div><p class="eyebrow">FIND A TOPIC</p><h2 id="searchTitle">Search flashcards</h2></div><button class="close-button" type="button" data-close-dialog="searchDialog" aria-label="Close search">×</button></div>
+    <label class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" autocomplete="off" placeholder="Try “demand”, “ledger”, or “partnership”"><span class="search-shortcut"><kbd>Esc</kbd></span></label>
+    <p id="searchSummary" class="result-summary">Start typing to search all 60 cards.</p>
+    <div id="searchResults" class="result-list"></div>
+  </dialog>
+
+  <dialog id="questionDialog" class="sheet-dialog" aria-labelledby="questionListTitle">
+    <div class="dialog-head"><div><p class="eyebrow">JUMP TO A CARD</p><h2 id="questionListTitle">Questions</h2></div><button class="close-button" type="button" data-close-dialog="questionDialog" aria-label="Close question list">×</button></div>
+    <div id="questionList" class="question-list"></div>
+  </dialog>
+
+  <script src="flashcards-data.js"></script>
+  <script src="study-app.js"></script>
+</body>
+</html>
